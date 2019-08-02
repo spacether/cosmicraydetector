@@ -1,9 +1,18 @@
+PACKAGE  = cosmicraydetector
+
 # runs the go program
 run:
-	go run cmd/cosmicraydetector/main.go
+	go run cmd/main.go
 
 runbin:
 	build/cosmicraydetector
 
+.PHONY: build
 build:
-	go build -o build/cosmicraydetector -i cmd/cosmicraydetector/main.go
+	go build -o build/$(PACKAGE) -i cmd/main.go
+
+test:
+	go test ./cmd -v
+
+dep-init:
+	dep init
