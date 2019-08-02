@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"runtime/debug"
 	"time"
 	"unicode/utf8"
 )
@@ -11,16 +14,20 @@ const bytesPerUint64 = 8
 const uint64FmtString = "%08b"
 
 type flip struct {
-	Value     uint64
-	Binary    string
+	Value          uint64
+	Binary         string
 	NumChangedBits int
-	ChangedBits string
-	Duration  time.Duration // how long the value was stored before it was changed
-	Time      time.Time     // when the bit flip happened
+	ChangedBits    string
+	Duration       time.Duration // how long the value was stored before it was changed
+	Time           time.Time     // when the bit flip happened
 }
 
 func main() {
 	fmt.Println("Starting cosmic ray detector")
+	// the SetGCPercent input is int %, and triggers garbage collection
+	// the default is 100%, so if our program uses 1 GiB, we don't want to wait
+	// for 2 GiB of usage, instead wait for 1,100 of usage
+	debug.SetGCPercent(10)
 
 	reqMibSize := 1000
 	startTime := time.Now()
@@ -28,7 +35,26 @@ func main() {
 	flips := make([]flip, 0)
 	indexedFlips := make(map[int][]*flip)
 	delaySecs := 60
+
+	// handle interrupt signal
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		cleanUp(&memBlock, &flips, &indexedFlips)
+		os.Exit(0)
+	}()
+
 	infiniteLoop(delaySecs, memBlock, &flips, indexedFlips, startTime)
+}
+
+func cleanUp(memBlock *[]uint64, flips *[]flip, indexedFlips *map[int][]*flip) {
+	fmt.Printf("\nCleaning up\n")
+	*memBlock = make([]uint64, 0)
+	*flips = make([]flip, 0)
+	*indexedFlips = make(map[int][]*flip)
+	debug.FreeOSMemory()
+	fmt.Printf("Cleanup Done\n")
 }
 
 func getMemoryBlock(reqMibSize int) []uint64 {
@@ -78,12 +104,12 @@ func checkBitFlip(memBlock []uint64, flips *[]flip, indexedFlips map[int][]*flip
 			t := time.Now()
 			duration := t.Sub(startTime)
 			f := flip{
-				Value:     val,
-				Binary:    binary,
-				ChangedBits: changedBits,
+				Value:          val,
+				Binary:         binary,
+				ChangedBits:    changedBits,
 				NumChangedBits: bits,
-				Duration:  duration,
-				Time:      t,
+				Duration:       duration,
+				Time:           t,
 			}
 			fmt.Printf("%v\n", f)
 			*flips = append(*flips, f)

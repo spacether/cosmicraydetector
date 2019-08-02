@@ -7,6 +7,7 @@ run:
 runbin:
 	build/cosmicraydetector
 
+.PHONY: build
 build:
 	go build -o build/$(PACKAGE) -i cmd/main.go
 
