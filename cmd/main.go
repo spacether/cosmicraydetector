@@ -34,7 +34,7 @@ func main() {
 	memBlock := getMemoryBlock(reqMibSize)
 	flips := make([]flip, 0)
 	indexedFlips := make(map[int][]*flip)
-	delaySecs := 60
+	delaySecs := 120
 
 	// handle interrupt signal
 	c := make(chan os.Signal, 1)
@@ -73,9 +73,13 @@ func byteMibSize(memBlock []uint64) (byteSize int, mibSize int) {
 
 func infiniteLoop(delaySecs int, memBlock []uint64, flips *[]flip, indexedFlips map[int][]*flip, startTime time.Time) {
 	for {
-		time.Sleep(time.Duration(delaySecs) * time.Second)
+		t1 := time.Now()
 		checkBitFlip(memBlock, flips, indexedFlips, startTime)
-		fmt.Printf("Slept %d seconds: len(flips)=%d\n", delaySecs, len(*flips))
+		t2 := time.Now()
+		elapsed := t2.Sub(t1)
+		fmt.Printf("Slept %d seconds: time=%v inspection_duration=%v len(flips)=%d\n", delaySecs, t2, elapsed, len(*flips))
+		remainder := time.Duration(delaySecs)*time.Second - elapsed
+		time.Sleep(remainder)
 	}
 }
 
