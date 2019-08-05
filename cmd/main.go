@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,6 +23,8 @@ type flip struct {
 	Time           time.Time     // when the bit flip happened
 }
 
+var blockSize = flag.Int("blockSize", 1000, "memory block size in MiB")
+
 func main() {
 	fmt.Println("Starting cosmic ray detector")
 	// the SetGCPercent input is int %, and triggers garbage collection
@@ -29,12 +32,12 @@ func main() {
 	// for 2 GiB of usage, instead wait for 1,100 of usage
 	debug.SetGCPercent(10)
 
-	reqMibSize := 1000
+	flag.Parse()
+	reqMibSize := *blockSize
 	startTime := time.Now()
 	memBlock := getMemoryBlock(reqMibSize)
 	flips := make([]flip, 0)
 	indexedFlips := make(map[int][]*flip)
-	delaySecs := 60
 
 	// handle interrupt signal
 	c := make(chan os.Signal, 1)
@@ -45,6 +48,11 @@ func main() {
 		os.Exit(0)
 	}()
 
+	t1 := time.Now()
+	checkBitFlip(memBlock, &flips, indexedFlips, startTime)
+	t2 := time.Now()
+	elapsed := t2.Sub(t1)
+	delaySecs := 60 * int((elapsed.Seconds()+60.0)/60.0)
 	infiniteLoop(delaySecs, memBlock, &flips, indexedFlips, startTime)
 }
 
@@ -73,9 +81,13 @@ func byteMibSize(memBlock []uint64) (byteSize int, mibSize int) {
 
 func infiniteLoop(delaySecs int, memBlock []uint64, flips *[]flip, indexedFlips map[int][]*flip, startTime time.Time) {
 	for {
-		time.Sleep(time.Duration(delaySecs) * time.Second)
+		t1 := time.Now()
 		checkBitFlip(memBlock, flips, indexedFlips, startTime)
-		fmt.Printf("Slept %d seconds: len(flips)=%d\n", delaySecs, len(*flips))
+		t2 := time.Now()
+		elapsed := t2.Sub(t1)
+		fmt.Printf("Slept %d seconds: time=%v inspection_duration=%v len(flips)=%d\n", delaySecs, t2, elapsed, len(*flips))
+		remainder := time.Duration(delaySecs)*time.Second - elapsed
+		time.Sleep(remainder)
 	}
 }
 

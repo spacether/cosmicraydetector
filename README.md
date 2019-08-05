@@ -2,7 +2,7 @@
 A Go program to detect bit flips caused by cosmic rays
 
 ## Implementation Notes
-This program makes an array of unsigned 64 bit integers taking up a certain amount of memory (we default to 1 GiB right now). Every delay seconds (60 default) we inspect all values in the array, and if any have changed we store the bit flip information and display it in the program.
+This program makes an array of unsigned 64 bit integers taking up a certain amount of memory (1 GiB default). Every delay seconds (60 default) we inspect all values in the array, and if any have changed we store the bit flip information and display it in the program.
 
 An example of the bit flip information that we store is:
 ```
@@ -19,6 +19,13 @@ f := flip{
 
 ## Usage
 `make run` to run the program
+
+## Build and Run Manually
+```
+go build -o build/cosmicraydetector -i cmd/main.go
+# XXX is the memory block size that is reserved in MiB
+build/cosmicraydetector -blockSize=XXXX
+```
 
 ## Testing
 `make test` to run tests
