@@ -20,5 +20,12 @@ f := flip{
 ## Usage
 `make run` to run the program
 
+## Build and Run Manually
+```
+go build -o build/cosmicraydetector -i cmd/main.go
+# XXX is the memory block size that is reserved in MiB
+build/cosmicraydetector -blockSize=XXXX
+```
+
 ## Testing
 `make test` to run tests
