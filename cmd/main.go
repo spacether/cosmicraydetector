@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -52,7 +53,7 @@ func main() {
 	checkBitFlip(memBlock, &flips, indexedFlips, startTime)
 	t2 := time.Now()
 	elapsed := t2.Sub(t1)
-	delaySecs := 60 * int((elapsed.Seconds()+60.0)/60.0)
+	delaySecs := 60 * (int(math.Ceil(elapsed.Seconds()/60.0)) + 1)
 	infiniteLoop(delaySecs, memBlock, &flips, indexedFlips, startTime)
 }
 
